@@ -1,5 +1,4 @@
-const Topic = require('../models/Topic');
-const Subtopic = require('../models/Subtopic');
+const Topic = require('../models/Topic');const Subtopic = require('../models/Subtopic');
 const geminiService = require('../services/geminiService');
 const Quiz = require('../models/Quiz');
 const UserProgress = require('../models/UserProgress');
@@ -35,9 +34,12 @@ const topicController = {
       });
 
       if (existingSubtopics.length > 0) {
-        // If subtopics exist in the database, return them
+        // If subtopics exist in the database, return them with IDs
         return res.json({
-          subtopics: existingSubtopics.map((st) => st.name),
+          subtopics: existingSubtopics.map((st) => ({
+            id: st._id,
+            name: st.name,
+          })),
           source: 'database',
         });
       }
@@ -63,7 +65,10 @@ const topicController = {
       );
 
       res.json({
-        subtopics: generatedSubtopics,
+        subtopics: createdSubtopics.map((st) => ({
+          id: st._id,
+          name: st.name,
+        })),
         source: 'gemini',
       });
     } catch (error) {
@@ -122,7 +127,7 @@ const topicController = {
   // Generate content for selected subtopics
   generateSubtopicContent: async (req, res) => {
     try {
-      const { subtopicId, userId } = req.body;
+      const { subtopicId, userId, subtopicName } = req.body;
 
       // Generate content for the subtopic
       const subtopic = await Subtopic.findById(subtopicId);
@@ -131,7 +136,9 @@ const topicController = {
       }
 
       // Generate content (your existing content generation logic)
-      const generatedContent = await generateContent(subtopic.name);
+      const generatedContent = await generateContent(
+        subtopicName || subtopic.name
+      );
       subtopic.content = generatedContent;
       await subtopic.save();
 
@@ -160,7 +167,11 @@ const topicController = {
 
       res.json({
         message: 'Content and quiz generated successfully',
-        subtopic: subtopic,
+        subtopic: {
+          _id: subtopic._id,
+          name: subtopic.name,
+          content: subtopic.content,
+        },
         quiz: quiz,
         userProgress: userProgress,
       });
