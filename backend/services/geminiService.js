@@ -65,16 +65,35 @@ class GeminiService {
      * @param {number} count - Number of questions to generate
      * @returns {Promise<Object[]>} - Array of quiz questions
      */
-    async generateQuizQuestions(subtopicName, difficultyLevel, count = 5) {
+    async generateQuizQuestions(subtopicName, difficultyLevel, count = 10) {
         const prompt = `Generate ${count} multiple choice questions about "${subtopicName}" at ${difficultyLevel} level. 
         For each question, provide 4 options and mark the correct answer. 
-        Format the response as JSON with an array of questions, each containing:
-        - question: string
-        - options: array of 4 strings
-        - correctAnswer: string (one of the options)`;
+        Return the response in this exact JSON format:
+        [
+          {
+            "question": "Question text here",
+            "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
+            "correctAnswerIndex": 0
+          }
+        ]
+        Where correctAnswerIndex is the index of the correct option in the options array (0-3).
+        Make sure the response is valid JSON and can be parsed.`;
 
         const content = await this.generateContent(prompt);
-        return JSON.parse(content);
+        
+        try {
+            // Clean the response to ensure it's valid JSON
+            const cleanedContent = content
+                .replace(/```json\n?/g, '')  // Remove ```json markers
+                .replace(/```\n?/g, '')      // Remove ``` markers
+                .trim();                     // Remove whitespace
+            
+            return JSON.parse(cleanedContent);
+        } catch (error) {
+            console.error('Error parsing quiz questions:', error);
+            console.error('Raw content:', content);
+            throw new Error('Failed to parse quiz questions from Gemini response');
+        }
     }
 
     /**

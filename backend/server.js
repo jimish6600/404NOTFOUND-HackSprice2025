@@ -16,7 +16,7 @@ app.use(express.json());
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB', process.env.PORT, process.env.PORT))
+  .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('MongoDB connection error:', err));
 app.get('/', (req, res)=>{
     return res.json("Hello World");

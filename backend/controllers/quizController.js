@@ -4,31 +4,47 @@ const Subtopic = require('../models/Subtopic');
 const geminiService = require('../services/geminiService');
 
 const quizController = {
-  // Generate quiz for a subtopic
-  generateQuiz: async (req, res) => {
+  // Get or Generate quiz for a subtopic
+  getOrGenerateQuiz: async (req, res) => {
     try {
       const { subtopicId } = req.params;
+
+      // First, check if a quiz already exists for this subtopic
+      const existingQuiz = await Quiz.findOne({ subtopic: subtopicId });
+      if (existingQuiz) {
+        return res.json({
+          quiz: existingQuiz,
+          source: 'database'
+        });
+      }
+
+      // If no quiz exists, get the subtopic details
       const subtopic = await Subtopic.findById(subtopicId);
-      
       if (!subtopic) {
         return res.status(404).json({ message: 'Subtopic not found' });
       }
 
+      // Generate new quiz using Gemini
       const questions = await geminiService.generateQuizQuestions(
         subtopic.name,
         subtopic.difficultyLevel
       );
 
-      const quiz = new Quiz({
+      // Create and save the new quiz
+      const newQuiz = new Quiz({
         subtopic: subtopicId,
         questions,
         difficultyLevel: subtopic.difficultyLevel
       });
 
-      await quiz.save();
-      res.status(201).json(quiz);
+      await newQuiz.save();
+
+      res.json({
+        quiz: newQuiz,
+        source: 'gemini'
+      });
     } catch (error) {
-      res.status(500).json({ message: 'Error generating quiz', error: error.message });
+      res.status(500).json({ message: 'Error getting/generating quiz', error: error.message });
     }
   },
 
@@ -45,11 +61,12 @@ const quizController = {
 
       // Calculate score and check answers
       const results = quiz.questions.map((question, index) => {
-        const isCorrect = question.correctAnswer === answers[index];
+        const isCorrect = question.correctAnswerIndex === answers[index];
         return {
           questionId: question._id,
-          selectedAnswer: answers[index],
-          isCorrect
+          selectedAnswerIndex: answers[index],
+          isCorrect,
+          correctAnswerIndex: question.correctAnswerIndex
         };
       });
 

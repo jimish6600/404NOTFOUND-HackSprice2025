@@ -2,8 +2,8 @@ const express = require('express');
 const router = express.Router();
 const quizController = require('../controllers/quizController');
 
-// Generate quiz for a subtopic
-router.post('/generate/:subtopicId', quizController.generateQuiz);
+// Get or Generate quiz for a subtopic
+router.get('/subtopic/:subtopicId', quizController.getOrGenerateQuiz);
 
 // Submit quiz answers
 router.post('/:quizId/submit', quizController.submitQuiz);
