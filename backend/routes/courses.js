@@ -1,4 +1,5 @@
-const express = require('express');const router = express.Router();
+const express = require('express');
+const router = express.Router();
 const courseController = require('../controllers/courseController');
 
 // Create user progress entry
