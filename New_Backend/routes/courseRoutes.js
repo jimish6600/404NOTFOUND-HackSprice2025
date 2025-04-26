@@ -7,4 +7,10 @@ const authenticate = require('../middleware/Authmiddleware');
 
 router.post('/create', authenticate, courseController.createCourse);
 
+// Get all courses
+router.get('/', authenticate, courseController.getAllCourses);
+
+// Get course details
+router.get('/:courseId', authenticate, courseController.getCourseDetails);
+
 module.exports = router; 
