@@ -37,9 +37,9 @@ function App() {
           element: <CreateCourses />,
         },
         {
-          path: '/course/:courseId',
-          element: <CourseDetails />,
-        },
+          path:'course/:courseId',
+          element:<CourseDetails/>
+        }
       ],
     },
     {
