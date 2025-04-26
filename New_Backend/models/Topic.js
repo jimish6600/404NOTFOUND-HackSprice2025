@@ -11,6 +11,10 @@ const topicSchema = new mongoose.Schema({
         enum: ['beginner', 'intermediate', 'advanced'],
         required: true
     },
+    userId: {
+        type: String,
+        required: true
+    },
     createdAt: {
         type: Date,
         default: Date.now

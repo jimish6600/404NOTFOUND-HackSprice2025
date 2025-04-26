@@ -149,8 +149,8 @@ exports.createCourse = async (req, res) => {
         const userId = req.userId;
         console.log('Received request:', { topic, difficulty, userId });
 
-        // Check if topic already exists
-        let existingTopic = await Topic.findOne({ name: topic });
+        // Check if topic already exists for this user
+        let existingTopic = await Topic.findOne({ name: topic, userId });
         console.log('Existing topic:', existingTopic);
         
         // Check if topic exists and has subtopics
@@ -161,7 +161,11 @@ exports.createCourse = async (req, res) => {
             // If topic doesn't exist, create it
             if (!existingTopic) {
                 console.log('Creating new topic');
-                existingTopic = await Topic.create({ name: topic, difficulty });
+                existingTopic = await Topic.create({ 
+                    name: topic, 
+                    difficulty,
+                    userId 
+                });
             }
             
             // Generate subtopics
@@ -252,6 +256,82 @@ exports.createCourse = async (req, res) => {
         
     } catch (error) {
         console.error('Error creating course:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+};
+
+// Get all courses for the authenticated user
+exports.getAllCourses = async (req, res) => {
+    try {
+        const userId = req.userId ;
+        console.log('User ID:', userId);
+        
+        const topics = await Topic.find({ userId })
+            .sort({ createdAt: -1 }); // Sort by newest first
+        
+        console.log('Topics:', topics);
+
+        // For each topic, get the count of subtopics
+        const courses = await Promise.all(topics.map(async (topic) => {
+            const subtopicCount = await Subtopic.countDocuments({ topic: topic._id });
+            return {
+                _id: topic._id,
+                name: topic.name,
+                difficulty: topic.difficulty,
+                createdAt: topic.createdAt,
+                subtopicCount
+            };
+        }));
+        console.log('Courses:', courses);
+
+        res.status(200).json({
+            success: true,
+            courses
+        });
+    } catch (error) {
+        console.error('Error getting all courses:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+};
+
+// Get course details for the authenticated user
+exports.getCourseDetails = async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const userId = req.userId;
+
+        // Get the topic for this user
+        const topic = await Topic.findOne({ _id: courseId, userId });
+        if (!topic) {
+            return res.status(404).json({
+                success: false,
+                error: 'Course not found'
+            });
+        }
+
+        // Get all subtopics with their quizzes
+        const subtopics = await Subtopic.find({ topic: courseId })
+            .populate('quizId')
+            .sort({ createdAt: 1 }); // Sort by creation date
+
+        res.status(200).json({
+            success: true,
+            course: {
+                _id: topic._id,
+                name: topic.name,
+                difficulty: topic.difficulty,
+                createdAt: topic.createdAt,
+                subtopics
+            }
+        });
+    } catch (error) {
+        console.error('Error getting course details:', error);
         res.status(500).json({
             success: false,
             error: error.message
