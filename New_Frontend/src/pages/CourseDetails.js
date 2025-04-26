@@ -25,6 +25,9 @@ const CourseDetails = () => {
         );
         if (response.data.success) {
           setCourse(response.data.course);
+          if (response.data.course.subtopics.length > 0) {
+            setSelectedSubtopic(response.data.course.subtopics[0]);
+          }
         } else {
           toast.error('Failed to fetch course details');
         }
@@ -41,6 +44,18 @@ const CourseDetails = () => {
 
   const handleCreateQuiz = () => {
     navigate('/createquiz', { state: { courseId } });
+  };
+
+  const handleAttemptQuiz = () => {
+    if (selectedSubtopic && selectedSubtopic.quizId) {
+      navigate(`/quizruning/${selectedSubtopic.quizId.quizCode}`);
+    } else {
+      toast.error('Please select a subtopic with a quiz to attempt.');
+    }
+  };
+
+  const handleShowFeedback = () => {
+    navigate('/feedback', { state: { courseId } });
   };
 
   if (loading) {
@@ -72,7 +87,11 @@ const CourseDetails = () => {
           <h3 className="text-lg font-semibold mb-2">Subtopics:</h3>
           <ul className="list-disc pl-5 space-y-2">
             {course.subtopics.map((subtopic) => (
-              <li key={subtopic._id} onClick={() => setSelectedSubtopic(subtopic)}>
+              <li
+                key={subtopic._id}
+                onClick={() => setSelectedSubtopic(subtopic)}
+                className={selectedSubtopic && selectedSubtopic._id === subtopic._id ? 'text-green-500' : ''}
+              >
                 {subtopic.name}
               </li>
             ))}
@@ -86,12 +105,20 @@ const CourseDetails = () => {
             </div>
           </div>
         )}
-        <button
-          onClick={handleCreateQuiz}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-        >
-          Create Quiz for this Course
-        </button>
+        <div className="flex space-x-4">
+          <button
+            onClick={handleAttemptQuiz}
+            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+          >
+            Attempt Quiz
+          </button>
+          <button
+            onClick={handleShowFeedback}
+            className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
+          >
+            Show Feedback
+          </button>
+        </div>
       </div>
     </div>
   );
