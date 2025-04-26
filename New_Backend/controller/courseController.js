@@ -266,7 +266,8 @@ exports.createCourse = async (req, res) => {
 // Get all courses for the authenticated user
 exports.getAllCourses = async (req, res) => {
     try {
-        const userId = req.userId;
+        const userId = req.userId ;
+        console.log('User ID:', userId);
         
         const topics = await Topic.find({ userId })
             .sort({ createdAt: -1 }); // Sort by newest first
