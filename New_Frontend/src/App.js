@@ -7,6 +7,7 @@ import QuizManager from './pages/Createquiz';
 import AccessQuiz from './pages/AccessQuiz';
 import AttemptedQuizzes from './pages/AttemptedQuizzes';
 import CreateCourses from './pages/CreateCourses';
+import CourseDetails from './pages/CourseDetails';
 import './App.css';
 import Quizruning from './pages/Quizruning';
 
@@ -35,6 +36,10 @@ function App() {
         {
           path: '/createcourses',
           element: <CreateCourses />,
+        },
+        {
+          path: '/course/:courseId',
+          element: <CourseDetails />,
         },
       ],
     },
