@@ -271,6 +271,8 @@ exports.getAllCourses = async (req, res) => {
         const topics = await Topic.find({ userId })
             .sort({ createdAt: -1 }); // Sort by newest first
         
+        console.log('Topics:', topics);
+
         // For each topic, get the count of subtopics
         const courses = await Promise.all(topics.map(async (topic) => {
             const subtopicCount = await Subtopic.countDocuments({ topic: topic._id });
@@ -282,6 +284,7 @@ exports.getAllCourses = async (req, res) => {
                 subtopicCount
             };
         }));
+        console.log('Courses:', courses);
 
         res.status(200).json({
             success: true,
