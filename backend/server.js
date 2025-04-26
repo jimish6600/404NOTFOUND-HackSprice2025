@@ -5,6 +5,7 @@ const dotenv = require('dotenv');
 const authRoutes = require('./routes/auth');
 const topicRoutes = require('./routes/topics');
 const quizRoutes = require('./routes/quizzes');
+const courseRoutes = require('./routes/courses');
 
 dotenv.config();
 
@@ -25,6 +26,8 @@ app.get('/', (req, res)=>{
 app.use('/api/auth', authRoutes);
 app.use('/api/topics', topicRoutes);
 app.use('/api/quizzes', quizRoutes);
+app.use('/api/courses', courseRoutes);
+
 
 // Error handling middleware
 app.use((err, req, res, next) => {

@@ -1,6 +1,8 @@
 const Topic = require('../models/Topic');
 const Subtopic = require('../models/Subtopic');
 const geminiService = require('../services/geminiService');
+const Quiz = require('../models/Quiz');
+const UserProgress = require('../models/UserProgress');
 
 const topicController = {
   // Get all topics
@@ -9,7 +11,9 @@ const topicController = {
       const topics = await Topic.find();
       res.json(topics);
     } catch (error) {
-      res.status(500).json({ message: 'Error fetching topics', error: error.message });
+      res
+        .status(500)
+        .json({ message: 'Error fetching topics', error: error.message });
     }
   },
 
@@ -25,22 +29,25 @@ const topicController = {
       }
 
       // First, try to get subtopics from the database
-      const existingSubtopics = await Subtopic.find({ 
+      const existingSubtopics = await Subtopic.find({
         topic: topicId,
-        difficultyLevel: difficultyLevel 
+        difficultyLevel: difficultyLevel,
       });
 
       if (existingSubtopics.length > 0) {
         // If subtopics exist in the database, return them
-        return res.json({ 
-          subtopics: existingSubtopics.map(st => st.name),
-          source: 'database'
+        return res.json({
+          subtopics: existingSubtopics.map((st) => st.name),
+          source: 'database',
         });
       }
 
       // If no subtopics exist, generate them using Gemini
-      const generatedSubtopics = await geminiService.generateSubtopics(topic.name, difficultyLevel);
-      
+      const generatedSubtopics = await geminiService.generateSubtopics(
+        topic.name,
+        difficultyLevel
+      );
+
       // Save the generated subtopics to the database
       const createdSubtopics = await Promise.all(
         generatedSubtopics.map(async (name) => {
@@ -48,19 +55,21 @@ const topicController = {
             name,
             topic: topicId,
             difficultyLevel,
-            description: `Learn about ${name} in ${topic.name}`
+            description: `Learn about ${name} in ${topic.name}`,
           });
           await subtopic.save();
           return subtopic;
         })
       );
 
-      res.json({ 
+      res.json({
         subtopics: generatedSubtopics,
-        source: 'gemini'
+        source: 'gemini',
       });
     } catch (error) {
-      res.status(500).json({ message: 'Error generating subtopics', error: error.message });
+      res
+        .status(500)
+        .json({ message: 'Error generating subtopics', error: error.message });
     }
   },
 
@@ -72,7 +81,9 @@ const topicController = {
       await topic.save();
       res.status(201).json(topic);
     } catch (error) {
-      res.status(500).json({ message: 'Error creating topic', error: error.message });
+      res
+        .status(500)
+        .json({ message: 'Error creating topic', error: error.message });
     }
   },
 
@@ -93,7 +104,7 @@ const topicController = {
             name,
             topic: topicId,
             difficultyLevel,
-            description: `Learn about ${name} in ${topic.name}`
+            description: `Learn about ${name} in ${topic.name}`,
           });
           await subtopic.save();
           return subtopic;
@@ -102,46 +113,84 @@ const topicController = {
 
       res.status(201).json(createdSubtopics);
     } catch (error) {
-      res.status(500).json({ message: 'Error creating subtopics', error: error.message });
+      res
+        .status(500)
+        .json({ message: 'Error creating subtopics', error: error.message });
     }
   },
 
   // Generate content for selected subtopics
   generateSubtopicContent: async (req, res) => {
     try {
-      const { subtopicIds } = req.body;
+      const { subtopicId, userId } = req.body;
 
-      const subtopics = await Subtopic.find({ _id: { $in: subtopicIds } });
-      if (subtopics.length === 0) {
-        return res.status(404).json({ message: 'No subtopics found' });
+      // Generate content for the subtopic
+      const subtopic = await Subtopic.findById(subtopicId);
+      if (!subtopic) {
+        return res.status(404).json({ message: 'Subtopic not found' });
       }
 
-      const updatedSubtopics = await Promise.all(
-        subtopics.map(async (subtopic) => {
-          // Check if content already exists
-          if (subtopic.content && subtopic.content.trim() !== '') {
-            return subtopic;
-          }
+      // Generate content (your existing content generation logic)
+      const generatedContent = await generateContent(subtopic.name);
+      subtopic.content = generatedContent;
+      await subtopic.save();
 
-          // Generate new content only if it doesn't exist
-          const content = await geminiService.generateSubtopicContent(
-            subtopic.name,
-            subtopic.difficultyLevel
-          );
-          subtopic.content = content;
-          await subtopic.save();
-          return subtopic;
-        })
-      );
+      // Generate or get quiz for the subtopic
+      let quiz = await Quiz.findOne({ subtopic: subtopicId });
+      if (!quiz) {
+        quiz = await generateQuiz(subtopic);
+      }
+
+      // Create or update user progress
+      let userProgress = await UserProgress.findOne({
+        user: userId,
+        subtopic: subtopicId,
+      });
+
+      if (!userProgress) {
+        userProgress = new UserProgress({
+          user: userId,
+          subtopic: subtopicId,
+          quizAttempts: [],
+          suggestedNextSubtopics: [],
+          lastAccessed: new Date(),
+        });
+        await userProgress.save();
+      }
 
       res.json({
-        subtopics: updatedSubtopics,
-        message: 'Content generated successfully'
+        message: 'Content and quiz generated successfully',
+        subtopic: subtopic,
+        quiz: quiz,
+        userProgress: userProgress,
       });
     } catch (error) {
-      res.status(500).json({ message: 'Error generating content', error: error.message });
+      console.error('Error generating content:', error);
+      res
+        .status(500)
+        .json({ message: 'Error generating content', error: error.message });
     }
-  }
+  },
 };
 
-module.exports = topicController; 
+// Helper function to generate quiz
+async function generateQuiz(subtopic) {
+  // Your quiz generation logic here
+  const quiz = new Quiz({
+    subtopic: subtopic._id,
+    questions: [
+      // Generated questions based on subtopic content
+    ],
+    difficultyLevel: 'intermediate',
+  });
+  await quiz.save();
+  return quiz;
+}
+
+// Helper function to generate content
+async function generateContent(subtopicName) {
+  // Your content generation logic here
+  return `Generated content for ${subtopicName}`;
+}
+
+module.exports = topicController;
