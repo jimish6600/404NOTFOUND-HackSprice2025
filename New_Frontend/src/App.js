@@ -1,5 +1,4 @@
-import { createBrowserRouter,
-  RouterProvider, } from 'react-router-dom'
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Auth from './pages/Auth';
@@ -7,46 +6,47 @@ import Layout from './pages/Layout';
 import QuizManager from './pages/Createquiz';
 import AccessQuiz from './pages/AccessQuiz';
 import AttemptedQuizzes from './pages/AttemptedQuizzes';
+import CreateCourses from './pages/CreateCourses';
 import './App.css';
 import Quizruning from './pages/Quizruning';
 
 function App() {
-  
   const router = createBrowserRouter([
     {
-      path: "/",
-      element: (
-        <Layout/>
-      ),
-      children:[
+      path: '/',
+      element: <Layout />,
+      children: [
         {
-          path:"/auth",
-          element:<Auth/>
+          path: '/auth',
+          element: <Auth />,
         },
         {
-          path:"/createquiz",
-          element:<QuizManager/>
+          path: '/createquiz',
+          element: <QuizManager />,
         },
         {
-          path:"/accessquiz",
-          element:<AccessQuiz/>
+          path: '/accessquiz',
+          element: <AccessQuiz />,
         },
         {
-          path:"/attemptedquizzes",
-          element:<AttemptedQuizzes/>
+          path: '/attemptedquizzes',
+          element: <AttemptedQuizzes />,
         },
-      ]
-      
+        {
+          path: '/createcourses',
+          element: <CreateCourses />,
+        },
+      ],
     },
     {
-      path : "quizruning/:quizCode",
-      element : <Quizruning/>
+      path: 'quizruning/:quizCode',
+      element: <Quizruning />,
     },
   ]);
   return (
     <>
-    <RouterProvider router={router} />
-    <ToastContainer />
+      <RouterProvider router={router} />
+      <ToastContainer />
     </>
   );
 }
