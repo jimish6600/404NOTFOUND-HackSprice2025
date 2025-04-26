@@ -118,6 +118,12 @@ const topicController = {
 
       const updatedSubtopics = await Promise.all(
         subtopics.map(async (subtopic) => {
+          // Check if content already exists
+          if (subtopic.content && subtopic.content.trim() !== '') {
+            return subtopic;
+          }
+
+          // Generate new content only if it doesn't exist
           const content = await geminiService.generateSubtopicContent(
             subtopic.name,
             subtopic.difficultyLevel
@@ -128,7 +134,10 @@ const topicController = {
         })
       );
 
-      res.json(updatedSubtopics);
+      res.json({
+        subtopics: updatedSubtopics,
+        message: 'Content generated successfully'
+      });
     } catch (error) {
       res.status(500).json({ message: 'Error generating content', error: error.message });
     }
