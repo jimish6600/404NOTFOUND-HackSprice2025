@@ -145,7 +145,8 @@ async function generateQuiz(subtopic, topic, difficulty) {
 // Main function to create course
 exports.createCourse = async (req, res) => {
     try {
-        const { topic, difficulty, userId } = req.body;
+        const { topic, difficulty } = req.body;
+        const userId = req.userId;
         console.log('Received request:', { topic, difficulty, userId });
 
         // Check if topic already exists
