@@ -10,6 +10,7 @@ import CreateCourses from './pages/CreateCourses';
 import CourseDetails from './pages/CourseDetails';
 import './App.css';
 import Quizruning from './pages/Quizruning';
+import CourseDetails from './pages/CourseDetails';
 
 function App() {
   const router = createBrowserRouter([
@@ -38,9 +39,9 @@ function App() {
           element: <CreateCourses />,
         },
         {
-          path: '/course/:courseId',
-          element: <CourseDetails />,
-        },
+          path:'course/:courseId',
+          element:<CourseDetails/>
+        }
       ],
     },
     {
