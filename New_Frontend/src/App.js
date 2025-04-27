@@ -9,6 +9,7 @@ import CreateCourses from './pages/CreateCourses';
 import CourseDetails from './pages/CourseDetails';
 import './App.css';
 import Quizruning from './pages/Quizruning';
+import MyBot from './pages/MyBot';
 
 function App() {
   const router = createBrowserRouter([
@@ -39,6 +40,13 @@ function App() {
         {
           path:'course/:courseId',
           element:<CourseDetails/>
+        },
+        {
+          path:'/mybot',
+          element:<MyBot/>
+        },
+        {
+          path:'/',
         }
       ],
     },

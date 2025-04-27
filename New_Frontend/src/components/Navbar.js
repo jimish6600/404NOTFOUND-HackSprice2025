@@ -45,6 +45,13 @@ const Navbar = () => {
           >
             My Courses
           </Link>
+          <Link
+            to={'/mybot'}
+            href="/mybot"
+            className="text-white hover:text-gray-300"
+          >
+            My Bot
+          </Link>
         </div>
         <div>
           {currectLogin ? (
