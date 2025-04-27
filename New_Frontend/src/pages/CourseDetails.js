@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import ReactMarkdown from 'react-markdown';
+import QuizAttempts from '../components/QuizAttempts';
 
 const CourseDetails = () => {
   const { courseId } = useParams();
@@ -10,6 +11,8 @@ const CourseDetails = () => {
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedSubtopic, setSelectedSubtopic] = useState(null);
+  const [showAttempts, setShowAttempts] = useState(false); // To control visibility of QuizAttempts
+  const [selectedQuiz, setSelectedQuiz] = useState(null); // To store selected quiz info
   const authToken = localStorage.getItem('authToken');
 
   useEffect(() => {
@@ -46,16 +49,40 @@ const CourseDetails = () => {
     navigate('/createquiz', { state: { courseId } });
   };
 
-  const handleAttemptQuiz = () => {
+  const handleAttemptQuiz = async () => {
+    console.log(selectedSubtopic);
     if (selectedSubtopic && selectedSubtopic.quizId) {
-      navigate(`/quizruning/${selectedSubtopic.quizId.quizCode}`);
+      const quizCode = selectedSubtopic.quizId.quizCode;
+      try {
+        const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/runtest/start/${quizCode}`, {
+          headers: {
+            authorization: authToken,
+          },
+        });
+        if (response.data.success) {
+          toast.success(response.data.message);
+          navigate(`/quizruning/${response.data.data}`);
+        } else {
+          toast.error(response.data.message);
+        }
+      } catch (error) {
+        toast.error(error.response.data.message);
+      }
     } else {
       toast.error('Please select a subtopic with a quiz to attempt.');
     }
   };
 
   const handleShowFeedback = () => {
-    navigate('/feedback', { state: { courseId } });
+    if (selectedSubtopic && selectedSubtopic.quizId) {
+      setSelectedQuiz({
+        quizName: selectedSubtopic.quizId.quizName,
+        quizCode: selectedSubtopic.quizId.quizCode,
+      });
+      setShowAttempts(true);
+    } else {
+      toast.error('Please select a subtopic with a quiz to show feedback.');
+    }
   };
 
   if (loading) {
@@ -119,6 +146,13 @@ const CourseDetails = () => {
             Show Feedback
           </button>
         </div>
+
+        {showAttempts && (
+          <QuizAttempts
+            selectedQuiz={selectedQuiz}
+            setShowAttempts={setShowAttempts}
+          />
+        )}
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 const Topic = require('../models/Topic');
 const Subtopic = require('../models/Subtopic');
 const Createquiz = require('../models/Storequiz');
+const UserQuiz = require("../models/Sharetest");
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 // Initialize Gemini API
@@ -199,28 +200,43 @@ exports.createCourse = async (req, res) => {
                         // Generate content
                         const content = await generateContent(subtopicName, topic, difficulty);
                         
-                        // Create subtopic
-                        const subtopic = await Subtopic.create({
-                            name: subtopicName,
-                            topic: existingTopic._id,
-                            content
-                        });
-                        console.log('Created subtopic:', subtopic._id);
-                        
                         // Generate and create quiz
                         const quizData = await generateQuiz(subtopicName, topic, difficulty);
+                        const quizCode = Math.random().toString(36).substring(2, 8).toUpperCase();
                         const quiz = await Createquiz.create({
                             userId,
                             quizName: `${topic} - ${subtopicName}`,
-                            quizCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
+                            quizCode,
                             questions: quizData.questions,
                             navigate: true
                         });
                         console.log('Created quiz:', quiz._id);
                         
-                        // Update subtopic with quiz ID
-                        subtopic.quizId = quiz._id;
-                        await subtopic.save();
+                        // Create subtopic with quizCode
+                        const subtopic = await Subtopic.create({
+                            name: subtopicName,
+                            topic: existingTopic._id,
+                            content,
+                            quizId: quiz._id,
+                            quizCode
+                        });
+                        console.log('Created subtopic:', subtopic._id);
+                        
+                        // Store in UserQuiz
+                        const userQuiz = new UserQuiz({
+                            quizCode: quiz.quizCode,
+                            quizName: quiz.quizName,
+                            quizCreatorId: quiz.userId,
+                            userId,
+                            questions: quiz.questions.map((question) => ({
+                                question: question.question,
+                                options: question.options,
+                                correctAnswer: question.correctAnswer,
+                                userAnswer: "",
+                            })),
+                            navigate: quiz.navigate,
+                        });
+                        await userQuiz.save();
                         
                         createdSubtopics.push(subtopic);
                     } catch (error) {
