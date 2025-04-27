@@ -143,7 +143,7 @@ async function generateQuiz(subtopic, topic, difficulty) {
 }
 
 // Main function to create course
-HEexports.createCourse = async (req, res) => {
+exports.createCourse = async (req, res) => {
     try {
         const { topic, difficulty } = req.body;
         const userId = req.userId;
