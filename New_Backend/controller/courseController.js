@@ -1,6 +1,7 @@
 const Topic = require('../models/Topic');
 const Subtopic = require('../models/Subtopic');
 const Createquiz = require('../models/Storequiz');
+const UserQuiz = require('../models/UserQuiz');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 // Initialize Gemini API
