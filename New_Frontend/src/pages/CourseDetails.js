@@ -46,10 +46,25 @@ const CourseDetails = () => {
     navigate('/createquiz', { state: { courseId } });
   };
 
-  const handleAttemptQuiz = () => {
+  const handleAttemptQuiz = async () => {
     console.log(selectedSubtopic);
     if (selectedSubtopic && selectedSubtopic.quizId) {
-      navigate(`/quizruning/${selectedSubtopic.quizId.quizCode}`);
+      const quizCode = selectedSubtopic.quizId.quizCode;
+      try {
+        const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/runtest/start/${quizCode}`, {
+          headers: {
+            authorization: authToken,
+          },
+        });
+        if (response.data.success) {
+          toast.success(response.data.message);
+          navigate(`/quizruning/${response.data.data}`);
+        } else {
+          toast.error(response.data.message);
+        }
+      } catch (error) {
+        toast.error(error.response.data.message);
+      }
     } else {
       toast.error('Please select a subtopic with a quiz to attempt.');
     }
