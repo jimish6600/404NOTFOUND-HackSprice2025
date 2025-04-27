@@ -51,7 +51,7 @@ const ChatBot = () => {
     formData.append('userId', userId);
 
     try {
-      const response = await axios.post('http://localhost:3001/api/upload', formData);
+      const response = await axios.post('https://four04notfound-hacksprice2025-1.onrender.com/api/upload', formData);
       setMessage(`Content processed! ${response.data.chunks} chunks uploaded.`);
       setChatOpen(true);
       setLoading(false);
@@ -71,7 +71,7 @@ const ChatBot = () => {
     
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:3001/api/ask', { question, userId });
+      const response = await axios.post('https://four04notfound-hacksprice2025-1.onrender.com/api/ask', { question, userId });
       setAnswer(response.data.answer);
       setQuestion('');
       setLoading(false);
