@@ -47,6 +47,7 @@ const CourseDetails = () => {
   };
 
   const handleAttemptQuiz = () => {
+    console.log(selectedSubtopic);
     if (selectedSubtopic && selectedSubtopic.quizId) {
       navigate(`/quizruning/${selectedSubtopic.quizId.quizCode}`);
     } else {
