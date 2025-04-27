@@ -37,65 +37,76 @@ const getTestDetails = async (req, res) => {
 
 const getTopScores = async (req, res) => {
     try {
-        const { quizCode } = req.params;
-        const userId = req.userId ;
-
-        // Get all test details for the quiz code, sorted by score in descending order
-        const allTestDetails = await TestDetails.find({ quizCode })
-            .sort({ score: -1 }).distinct('userId');
-
-        // Find the current user's position
-        const currentUserIndex = allTestDetails.findIndex(detail => detail.userId === userId);
-
-        let result;
-        if (currentUserIndex < 5) {
-            // If user is in top 5, return top 5
-            result = allTestDetails.slice(0, 5);
-        } else {
-            // If user is not in top 5, get top 5 and add user at 6th position
-            result = allTestDetails.slice(0, 5);
-            if (currentUserIndex !== -1) { // If user exists in the list
-                result.push(allTestDetails[currentUserIndex]);
-            }
+      const { quizCode } = req.params;
+      const userId = req.userId;
+  
+      // Get all test details sorted by score
+      const allTestDetails = await TestDetails.find({ quizCode }).sort({ score: -1 }).lean();
+  
+      // Now pick only top attempts with unique users
+      const seenUsers = new Set();
+      const uniqueTopDetails = [];
+  
+      for (const detail of allTestDetails) {
+        if (!seenUsers.has(detail.userId)) {
+          seenUsers.add(detail.userId);
+          uniqueTopDetails.push(detail);
         }
-
-        // Get all unique user IDs from the result
-        const userIds = result.map(detail => detail.userId);
-        
-        // Fetch all users in one query
-        const users = await User.find({ _id: { $in: userIds } });
-        
-        // Create a map of user IDs to usernames for quick lookup
-        const userMap = users.reduce((acc, user) => {
-            acc[user._id.toString()] = user.username;
-            return acc;
-        }, {});
-
-        // Format the response
-        const formattedResult = result.map(detail => ({
-            username: userMap[detail.userId] || 'Unknown User',
-            score: detail.score,
-            isCurrentUser: detail.userId === userId,
-            quizDetails: {
-                quizName: detail.quizName,
-                quizCode: detail.quizCode,
-                
-            }
-        }));
-
-        res.status(200).json({
-            success: true,
-            data: formattedResult
-        });
+      }
+  
+      // Find current user's attempt
+      const currentUserIndex = uniqueTopDetails.findIndex(detail => detail.userId === userId);
+  
+      let result;
+      if (currentUserIndex < 5 && currentUserIndex !== -1) {
+        // If user is in top 5
+        result = uniqueTopDetails.slice(0, 5);
+      } else {
+        // User not in top 5
+        result = uniqueTopDetails.slice(0, 5);
+        if (currentUserIndex !== -1) { // If user attempted the quiz
+          result.push(uniqueTopDetails[currentUserIndex]);
+        }
+      }
+  
+      // Get user IDs
+      const userIds = result.map(detail => detail.userId);
+  
+      // Fetch users
+      const users = await User.find({ _id: { $in: userIds } }).lean();
+  
+      // Map user IDs to usernames
+      const userMap = users.reduce((acc, user) => {
+        acc[user._id.toString()] = user.username;
+        return acc;
+      }, {});
+  
+      // Format final response
+      const formattedResult = result.map(detail => ({
+        username: userMap[detail.userId] || 'Unknown User',
+        score: detail.score,
+        isCurrentUser: detail.userId === userId,
+        quizDetails: {
+          quizName: detail.quizName,
+          quizCode: detail.quizCode,
+        }
+      }));
+  
+      res.status(200).json({
+        success: true,
+        data: formattedResult
+      });
+  
     } catch (error) {
-        console.error('Error fetching top scores:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error fetching top scores',
-            error: error.message
-        });
+      console.error('Error fetching top scores:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error fetching top scores',
+        error: error.message
+      });
     }
-};
+  };
+  
 
 module.exports = {
     getTestDetails,
