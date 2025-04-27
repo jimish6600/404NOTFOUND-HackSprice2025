@@ -143,7 +143,7 @@ async function generateQuiz(subtopic, topic, difficulty) {
 }
 
 // Main function to create course
-exports.createCourse = async (req, res) => {
+HEexports.createCourse = async (req, res) => {
     try {
         const { topic, difficulty } = req.body;
         const userId = req.userId;
@@ -218,6 +218,23 @@ exports.createCourse = async (req, res) => {
                         });
                         console.log('Created quiz:', quiz._id);
                         
+                        // Save the created quiz in UserQuiz
+                        const userQuiz = new UserQuiz({
+                            quizCode: quiz.quizCode,
+                            quizName: quiz.quizName,
+                            quizCreatorId: quiz.userId,
+                            userId,
+                            questions: quiz.questions.map((question) => ({
+                                question: question.question,
+                                options: question.options,
+                                correctAnswer: question.correctAnswer,
+                                userAnswer: "", // Initially empty
+                            })),
+                            navigate: quiz.navigate,
+                        });
+                        await userQuiz.save();
+                        console.log('Saved quiz in UserQuiz:', userQuiz._id);
+
                         // Update subtopic with quiz ID
                         subtopic.quizId = quiz._id;
                         await subtopic.save();
