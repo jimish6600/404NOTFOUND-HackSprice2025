@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { Link, useNavigate } from 'react-router-dom';
@@ -6,85 +6,103 @@ import { Link, useNavigate } from 'react-router-dom';
 const AccessQuiz = () => {
   const [quizCode, setQuizCode] = useState('');
   const [quizzes, setQuizzes] = useState([]);
+  const [showLeaderboardModal, setShowLeaderboardModal] = useState(false); // For showing leaderboard modal
+  const [leaderboardData, setLeaderboardData] = useState([]); // To store leaderboard data
   const authToken = localStorage.getItem('authToken');
   const navigate = useNavigate();
 
   const fetchUserQuizzes = async () => {
     try {
-      console.log(authToken)
       const response = await axios.get(
-        `${process.env.REACT_APP_BACKEND_URL}/sharetest/receivedquiz`, // Adjust endpoint as needed
+        `${process.env.REACT_APP_BACKEND_URL}/sharetest/receivedquiz`,
         {
           headers: {
-            authorization: authToken, // Set the token in the Authorization header
+            authorization: authToken,
           },
         }
       );
-      if(response.data.success){
-        setQuizzes(response.data.quizzes)
-      }else{
-        toast.error(response.data.message)
+      if (response.data.success) {
+        setQuizzes(response.data.quizzes);
+      } else {
+        toast.error(response.data.message);
       }
     } catch (error) {
-      toast.error( error.response.data.message);
+      toast.error(error.response.data.message);
     }
   };
 
-  const handleAddQuiz = async() => {
-      try {
-        // Make the API request with axios
-        const response = await axios.post(
-          `${process.env.REACT_APP_BACKEND_URL}/sharetest/sharecode/${quizCode}`,
-          {}, // Body can be empty if you're not sending any data
-          {
-            headers: {
-              authorization: authToken,  // Set the token in the Authorization header
-            },
-          }
-        );
-        
-        // Handle the successful response
-        setQuizCode("");
-        if(response.data.success){
-          toast.success(response.data.message)
-          fetchUserQuizzes();
-        }else{
-          toast.error(response.data.message)
-        }
-    
-      } catch (error) {
-        setQuizCode("");
-        toast.error(error.response.data.message)
-      }
-  };
-
-  useEffect(()=>{
-    fetchUserQuizzes();
-  },[])
-
-  const startquiz = async(value) => {
+  const handleAddQuiz = async () => {
     try {
-      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/runtest/start/${value}`, // The endpoint URL
+      const response = await axios.post(
+        `${process.env.REACT_APP_BACKEND_URL}/sharetest/sharecode/${quizCode}`,
+        {},
         {
           headers: {
-            authorization: authToken, // Set the token in the Authorization header
+            authorization: authToken,
           },
         }
       );
-      if(response.data.success){
-        toast.success(response.data.message)
-        navigate(`/quizruning/${response.data.data}`)
-      }else{
-        toast.error(response.data.message)
+      setQuizCode('');
+      if (response.data.success) {
+        toast.success(response.data.message);
+        fetchUserQuizzes();
+      } else {
+        toast.error(response.data.message);
       }
-  
     } catch (error) {
-      toast.error(error.response.data.message)
+      setQuizCode('');
+      toast.error(error.response.data.message);
     }
   };
+
+  const startquiz = async (value) => {
+    try {
+      const response = await axios.get(
+        `${process.env.REACT_APP_BACKEND_URL}/runtest/start/${value}`,
+        {
+          headers: {
+            authorization: authToken,
+          },
+        }
+      );
+      if (response.data.success) {
+        toast.success(response.data.message);
+        navigate(`/quizruning/${response.data.data}`);
+      } else {
+        toast.error(response.data.message);
+      }
+    } catch (error) {
+      toast.error(error.response.data.message);
+    }
+  };
+
+  const fetchLeaderboard = async (quizCode) => {
+    try {
+      const response = await axios.get(
+        `${process.env.REACT_APP_BACKEND_URL}/testdetails/gettopscores/${quizCode}`,
+        {
+          headers: {
+            authorization: authToken,
+          },
+        }
+      );
+      if (response.data.success) {
+        setLeaderboardData(response.data.data); // Set leaderboard data
+        setShowLeaderboardModal(true); // Show the leaderboard modal
+      } else {
+        toast.error(response.data.message);
+      }
+    } catch (error) {
+      toast.error(error.response.data.message);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserQuizzes();
+  }, []);
+
   return (
     <div className="flex flex-col items-center justify-start bg-blue-200 py-10 h-full">
-      {/* Quiz Code Input Section */}
       <div className="bg-white shadow-md rounded-lg p-6 mb-4 w-full max-w-lg text-center">
         <h2 className="text-3xl font-semibold mb-4">Add Quiz</h2>
         <div className="flex items-center justify-center space-x-4">
@@ -107,7 +125,7 @@ const AccessQuiz = () => {
       {/* Quizzes List Section */}
       <div className="bg-white shadow-md rounded-lg p-6 w-full max-w-4xl">
         <h2 className="text-3xl font-semibold mb-4 text-center">Your Quizzes</h2>
-        <div className="max-h-80 h-full overflow-scroll scrollbar-hide"> {/* Hide scrollbar */}
+        <div className="max-h-80 h-full overflow-scroll scrollbar-hide">
           <table className="table-auto w-full text-left">
             <thead>
               <tr>
@@ -116,6 +134,7 @@ const AccessQuiz = () => {
                 <th className="px-4 py-2 text-center">Total Marks</th>
                 <th className="px-4 py-2 text-center">Navigation</th>
                 <th className="px-4 py-2 text-center">Action</th>
+                <th className="px-4 py-2 text-center">Leaderboard</th>
               </tr>
             </thead>
             <tbody>
@@ -132,8 +151,19 @@ const AccessQuiz = () => {
                     )}
                   </td>
                   <td className="px-4 py-2 text-center">
-                    <button className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition" onClick={()=>startquiz(quiz.quizCode)}>
+                    <button
+                      className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition"
+                      onClick={() => startquiz(quiz.quizCode)}
+                    >
                       Attempt Quiz
+                    </button>
+                  </td>
+                  <td className="px-4 py-2 text-center">
+                    <button
+                      className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition"
+                      onClick={() => fetchLeaderboard(quiz.quizCode)} // Fetch leaderboard
+                    >
+                      View Leaderboard
                     </button>
                   </td>
                 </tr>
@@ -142,6 +172,39 @@ const AccessQuiz = () => {
           </table>
         </div>
       </div>
+
+      {/* Leaderboard Modal */}
+      {showLeaderboardModal && (
+        <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-96 text-center">
+            <h2 className="text-2xl font-semibold mb-4">Leaderboard</h2>
+            <table className="table-auto w-full text-left">
+              <thead>
+                <tr>
+                  <th className="px-4 py-2">Rank</th>
+                  <th className="px-4 py-2">Name</th>
+                  <th className="px-4 py-2">Score</th>
+                </tr>
+              </thead>
+              <tbody>
+                {leaderboardData.map((entry, index) => (
+                  <tr key={index}>
+                    <td className="px-4 py-2">{index + 1}</td>
+                    <td className="px-4 py-2">{entry.username}</td>
+                    <td className="px-4 py-2">{entry.score}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <button
+              className="bg-red-500 text-white px-4 py-2 rounded-lg mt-4 hover:bg-red-600"
+              onClick={() => setShowLeaderboardModal(false)} // Close modal
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
