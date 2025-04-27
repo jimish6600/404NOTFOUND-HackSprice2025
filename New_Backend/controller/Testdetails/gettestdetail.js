@@ -38,11 +38,11 @@ const getTestDetails = async (req, res) => {
 const getTopScores = async (req, res) => {
     try {
         const { quizCode } = req.params;
-        const userId = req.userId || '66dcda344feb7e795b15c077';
+        const userId = req.userId ;
 
         // Get all test details for the quiz code, sorted by score in descending order
         const allTestDetails = await TestDetails.find({ quizCode })
-            .sort({ score: -1 });
+            .sort({ score: -1 }).distinct('userId');
 
         // Find the current user's position
         const currentUserIndex = allTestDetails.findIndex(detail => detail.userId === userId);
